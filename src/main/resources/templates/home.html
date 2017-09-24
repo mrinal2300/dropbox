@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+</head>
+<body>
+<div class="container">
+
+    <button class="btn btn-primary" id="addFolderBtn">Add new folder</button>
+    <div id="addFolderBox" style="display: none">
+        <input id="folderName"  type="text" class="form-control">
+    </div>
+    <div id="uploadFileForm">
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <input type="file" id="chooseFiles" hidden multiple name="fileData[]">
+            <button type="submit" class="btn btn-primary" id="uploadFile">Upload file</button>
+        </form>
+    </div>
+    <input id="parentId"  type="hidden" th:value="${parentId}">
+
+    <div th:each = "document:${documents}">
+        <div th:if="${document.type} == 'folder'">
+            <a th:text ="${document.name}" th:href ="@{/document/}+${document.slug}"></a>
+        </div>
+        <div th:text="${document.name}"></div>
+        <div th:text="${document.type}"></div>
+        <a th:attr = "data-path=${document.slug}" class="deleteDoc" href="#">Delete</a>
+        <a th:href ="@{/document/download/}+${document.slug}">Download</a>
+        <a href="">Copy</a>
+        <a href="">Move</a>
+        <hr>
+    </div>
+
+
+</div>
+
+<!-- Optional JavaScript -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+<script>
+
+    $("#addFolderBtn").click(function(){
+        console.log("sdas");
+        $("#addFolderBox").show();
+    });
+
+    $("#folderName").blur(function(){
+
+        var name = $(this).val();
+        var parentId = $("#parentId").val();
+        if(name.length > 2){
+            savefolder(name, parentId);
+        }
+    });
+    
+    function savefolder(name, parentId) {
+        console.log(parentId);
+        $.post( "/ajax/document/savefolder", {name:name, parentId:parentId}, function( data ) {
+           console.log(data);
+            location.reload();
+        });
+    }
+
+    $(".deleteDoc").click(function () {
+        var path = $(this).data("path");
+        console.log("sdasd"+path);
+        $.post( "/ajax/document/deletedocument", {path:path}, function( data ) {
+            console.log(data);
+            location.reload();
+        });
+
+    });
+
+    $("#uploadFile").click(function(e){
+        $("#chooseFiles").click();
+        e.preventDefault();
+
+    });
+
+    $("#chooseFiles").change(function(e){
+        console.log("change function");
+        $("#uploadFileForm").submit();
+        e.preventDefault();
+    });
+
+    $('#uploadFileForm').submit(function(e) {
+
+        var parentId = $("#parentId").val();
+        var formData = new FormData();
+        formData.append("parentId",parentId);
+
+
+        var files = document.getElementById("chooseFiles").files;
+
+
+
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+
+
+            // Add the file to the request.
+            formData.append('fileData', file);
+            xhr = new XMLHttpRequest();
+            xhr.open('POST','/api/upload' , true);
+            xhr.send(formData);
+        }
+
+        console.log(formData);
+        return;
+
+        $.ajax({
+            type:'POST',
+            url: '/api/upload',
+            data:formData,
+            xhr: function() {
+                var myXhr = $.ajaxSettings.xhr();
+                if(myXhr.upload){
+                    myXhr.upload.addEventListener('progress',progress, false);
+                }
+                return myXhr;
+            },
+            cache:false,
+            contentType: false,
+            processData: false,
+
+            success:function(data){
+                console.log(data);
+
+                alert('data returned successfully');
+
+            },
+
+            error: function(data){
+                console.log(data);
+            }
+        });
+
+        e.preventDefault();
+
+    });
+
+    function progress(e){
+
+        if(e.lengthComputable){
+            var max = e.total;
+            var current = e.loaded;
+
+            var Percentage = (current * 100)/max;
+            console.log(Percentage);
+
+
+            if(Percentage >= 100)
+            {
+                // process completed
+            }
+        }
+    }
+
+</script>
+</body>
+</html>
+
+
+
